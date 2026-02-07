@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Trading Academy Pro</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://s3.tradingview.com/tv.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=Space+Mono&display=swap" rel="stylesheet">
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Manrope, sans-serif; background: #0a0e14; color: #e6edf3; padding-top: 60px; padding-bottom: 65px; }
+    
+    /* Header */
+    .header { position: fixed; top: 0; left: 0; right: 0; background: #0f1419; border-bottom: 1px solid #1f2937; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; z-index: 1000; height: 60px; }
+    .logo { font-family: Space Mono; font-size: 1.3rem; font-weight: 800; color: #00ff88; }
+    .header-actions { display: flex; gap: 10px; }
+    .icon-btn { width: 40px; height: 40px; border-radius: 50%; background: #151b23; border: none; color: #e6edf3; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
+    .badge { position: absolute; top: -2px; right: -2px; background: #ff3366; color: white; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 10px; min-width: 18px; }
+    
+    /* Bottom Nav */
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #0f1419; border-top: 1px solid #1f2937; display: flex; justify-content: space-around; padding: 8px 0; z-index: 1000; }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; background: none; border: none; color: #a0aec0; cursor: pointer; font-size: 0.75rem; }
+    .nav-item.active { color: #00ff88; }
+    .nav-item .icon { font-size: 1.4rem; }
+    
+    /* Content */
+    .content { padding: 16px; }
+    .card { background: #0f1419; border: 1px solid #1f2937; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+    .card h3 { font-size: 1.1rem; margin-bottom: 12px; }
+    
+    /* Hero */
+    .hero { text-align: center; padding: 40px 20px; background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 100%); border-radius: 16px; margin-bottom: 24px; border: 1px solid #1f2937; }
+    .hero h1 { font-size: 2rem; margin-bottom: 12px; font-weight: 800; background: linear-gradient(135deg, #00ff88 0%, #00cc6f 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero p { font-size: 0.95rem; color: #a0aec0; margin-bottom: 20px; }
+    .cta-buttons { display: flex; flex-direction: column; gap: 12px; }
+    .cta-btn { padding: 14px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem; width: 100%; }
+    .cta-btn.primary { background: #00ff88; color: #000; }
+    .cta-btn.secondary { background: transparent; color: #00ff88; border: 2px solid #00ff88; }
+    
+    /* Features */
+    .features { display: grid; gap: 12px; }
+    .feature-card { background: #0f1419; border: 1px solid #1f2937; border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s; }
+    .feature-card:active { transform: scale(0.98); border-color: #00ff88; }
+    .feature-icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .feature-card h3 { margin: 0 0 8px 0; font-size: 1.1rem; }
+    .feature-card p { margin: 0; color: #a0aec0; font-size: 0.9rem; }
+    
+    /* Stats */
+    .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
+    .stat { background: #151b23; padding: 16px; border-radius: 8px; text-align: center; }
+    .stat-label { font-size: 0.8rem; color: #a0aec0; margin-bottom: 6px; }
+    .stat-value { font-size: 1.4rem; font-weight: 700; color: #00ff88; }
+    .stat-value.negative { color: #ff3366; }
+    
+    /* Buttons */
+    .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.95rem; width: 100%; margin-bottom: 8px; }
+    .btn:disabled { opacity: 0.5; }
+    .buy { background: #00ff88; color: #000; }
+    .sell { background: #ff3366; color: #fff; }
+    .close { background: #1f2937; color: #fff; }
+    
+    /* Controls */
+    .control-group { margin-bottom: 12px; }
+    .control-group label { display: block; margin-bottom: 6px; font-size: 0.85rem; color: #a0aec0; font-weight: 600; }
+    .control-group input, .control-group select { width: 100%; padding: 12px; background: #151b23; border: 1px solid #1f2937; border-radius: 8px; color: #e6edf3; font-size: 1rem; }
+    
+    /* Position Card */
+    .position-card { background: #151b23; padding: 16px; border-radius: 8px; margin-top: 16px; border-left: 4px solid #00ff88; }
+    .position-card.sell { border-left-color: #ff3366; }
+    .position-card h4 { margin-bottom: 12px; color: #00ff88; }
+    .position-card > div { margin-bottom: 6px; font-size: 0.9rem; }
+    
+    /* Trade History */
+    .trade-item { background: #151b23; padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; font-size: 0.85rem; }
+    .profit { font-weight: 700; color: #00ff88; }
+    .loss { font-weight: 700; color: #ff3366; }
+    
+    /* Indicators */
+    .indicators { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 12px; }
+    .indicator { background: #151b23; padding: 12px; border-radius: 8px; text-align: center; border-left: 3px solid #ffa500; }
+    .indicator.bullish { border-left-color: #00ff88; }
+    .indicator.bearish { border-left-color: #ff3366; }
+    
+    /* Misc */
+    .divider { border: none; border-top: 1px solid #1f2937; margin: 16px 0; }
+    .empty { color: #a0aec0; font-size: 0.9rem; text-align: center; padding: 20px; }
+  </style>
+</head>
+
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+function Header() {
+  return (
+    <div className="header">
+      <div className="logo">Academy Pro</div>
+      <div className="header-actions">
+        <button className="icon-btn">🔍</button>
+        <button className="icon-btn">🔔<span className="badge">3</span></button>
+        <button className="icon-btn">☰</button>
+      </div>
+    </div>
+  );
+}
+
+function BottomNav({ page, setPage }) {
+  return (
+    <div className="bottom-nav">
+      <button className={`nav-item ${page === "home" ? "active" : ""}`} onClick={() => setPage("home")}>
+        <span className="icon">🏠</span>
+        <span>Início</span>
+      </button>
+      <button className={`nav-item ${page === "trade" ? "active" : ""}`} onClick={() => setPage("trade")}>
+        <span className="icon">📈</span>
+        <span>Trading</span>
+      </button>
+      <button className={`nav-item ${page === "sim" ? "active" : ""}`} onClick={() => setPage("sim")}>
+        <span className="icon">🎮</span>
+        <span>Simulador</span>
+      </button>
+      <button className={`nav-item ${page === "edu" ? "active" : ""}`} onClick={() => setPage("edu")}>
+        <span className="icon">📚</span>
+        <span>Educação</span>
+      </button>
+      <button className={`nav-item ${page === "more" ? "active" : ""}`} onClick={() => setPage("more")}>
+        <span className="icon">⋯</span>
+        <span>Mais</span>
+      </button>
+    </div>
+  );
+}
+
+function Home({ setPage }) {
+  return (
+    <div className="content">
+      <div className="hero">
+        <h1>Trading Academy Pro</h1>
+        <p>Plataforma completa para dominar os mercados financeiros</p>
+        <div className="cta-buttons">
+          <button className="cta-btn primary" onClick={() => setPage("sim")}>Começar Agora</button>
+          <button className="cta-btn secondary" onClick={() => setPage("edu")}>Aprender Mais</button>
+        </div>
+      </div>
+
+      <div className="features">
+        <div className="feature-card" onClick={() => setPage("trade")}>
+          <div className="feature-icon">📊</div>
+          <h3>Trading Avançado</h3>
+          <p>Gráficos profissionais com indicadores técnicos</p>
+        </div>
+        <div className="feature-card" onClick={() => setPage("sim")}>
+          <div className="feature-icon">💰</div>
+          <h3>Simulador Pro</h3>
+          <p>Pratique com stop loss e take profit</p>
+        </div>
+        <div className="feature-card" onClick={() => setPage("more")}>
+          <div className="feature-icon">💼</div>
+          <h3>Portfolio</h3>
+          <p>Acompanhe seus investimentos</p>
+        </div>
+        <div className="feature-card" onClick={() => setPage("more")}>
+          <div className="feature-icon">📰</div>
+          <h3>Notícias & Ranking</h3>
+          <p>Fique atualizado com o mercado</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TradingAdvanced() {
+  const [alerts, setAlerts] = useState([]);
+  const [newAlert, setNewAlert] = useState("");
+  const chartInitialized = useRef(false);
+
+  useEffect(() => {
+    if (!chartInitialized.current) {
+      new TradingView.widget({
+        container_id: "tv_chart",
+        autosize: true,
+        symbol: "FX:EURUSD",
+        interval: "5",
+        theme: "dark",
+        locale: "pt",
+        style: "1"
+      });
+      chartInitialized.current = true;
+    }
+  }, []);
+
+  const indicators = [
+    { name: "RSI", value: "45.2", status: "neutral" },
+    { name: "MACD", value: "Compra", status: "bullish" },
+    { name: "Bollinger", value: "Neutro", status: "neutral" },
+    { name: "MA 50", value: "1.0980", status: "bullish" }
+  ];
+
+  return (
+    <div className="content">
+      <div className="card">
+        <h3>EUR/USD ao Vivo</h3>
+        <div id="tv_chart" style={{ height: "350px" }}></div>
+      </div>
+
+      <div className="card">
+        <h3>Indicadores Técnicos</h3>
+        <div className="indicators">
+          {indicators.map((ind, i) => (
+            <div key={i} className={`indicator ${ind.status}`}>
+              <div style={{ fontSize: "0.75rem", color: "#a0aec0" }}>{ind.name}</div>
+              <div style={{ fontWeight: 700, marginTop: "4px" }}>{ind.value}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="card">
+        <h3>Alertas de Preço</h3>
+        <div className="control-group">
+          <input type="number" placeholder="Preço (ex: 1.1050)" value={newAlert} onChange={(e) => setNewAlert(e.target.value)} step="0.0001" />
+        </div>
+        <button className="btn buy" onClick={() => { if(newAlert) { setAlerts([...alerts, {price: parseFloat(newAlert), id: Date.now()}]); setNewAlert(""); }}}>
+          Adicionar Alerta
+        </button>
+        {alerts.length === 0 ? <div className="empty">Nenhum alerta configurado</div> : alerts.map(a => (
+          <div key={a.id} style={{background: "#151b23", padding: "12px", borderRadius: "8px", display: "flex", justifyContent: "space-between", marginTop: "8px"}}>
+            <span>🔔 {a.price.toFixed(4)}</span>
+            <button style={{background: "#1f2937", border: "none", color: "#fff", padding: "4px 12px", borderRadius: "6px", cursor: "pointer"}} onClick={() => setAlerts(alerts.filter(x => x.id !== a.id))}>✕</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SimulatorPro() {
+  const [balance, setBalance] = useState(10000);
+  const [pair, setPair] = useState("EURUSD");
+  const [price, setPrice] = useState(1.1000);
+  const [pos, setPos] = useState(null);
+  const [leverage, setLeverage] = useState(1);
+  const [stopLoss, setStopLoss] = useState("");
+  const [takeProfit, setTakeProfit] = useState("");
+  const [history, setHistory] = useState([]);
+
+  const pairs = { EURUSD: 1.1000, GBPUSD: 1.2700, USDJPY: 148.50, BTCUSD: 43500 };
+
+  useEffect(() => {
+    const i = setInterval(() => {
+      setPrice(p => {
+        const change = (Math.random() - 0.5) * 0.002;
+        const newPrice = pair === "BTCUSD" ? +(p + change * 1000).toFixed(2) : +(p + change).toFixed(5);
+        
+        if (pos) {
+          if (pos.type === "BUY") {
+            if (pos.stopLoss && newPrice <= pos.stopLoss) closePosition(newPrice, "Stop Loss");
+            else if (pos.takeProfit && newPrice >= pos.takeProfit) closePosition(newPrice, "Take Profit");
+          } else {
+            if (pos.stopLoss && newPrice >= pos.stopLoss) closePosition(newPrice, "Stop Loss");
+            else if (pos.takeProfit && newPrice <= pos.takeProfit) closePosition(newPrice, "Take Profit");
+          }
+        }
+        return newPrice;
+      });
+    }, 1000);
+    return () => clearInterval(i);
+  }, [pos, pair]);
+
+  useEffect(() => { setPrice(pairs[pair]); }, [pair]);
+
+  const openPosition = (type) => {
+    if (pos) return;
+    setPos({ type, entry: price, stopLoss: stopLoss ? parseFloat(stopLoss) : null, takeProfit: takeProfit ? parseFloat(takeProfit) : null, leverage });
+  };
+
+  const closePosition = (closePrice, reason = "Manual") => {
+    if (!pos) return;
+    const multiplier = pair === "BTCUSD" ? 1 : 1000;
+    const pnl = pos.type === "BUY" ? (closePrice - pos.entry) * multiplier * pos.leverage : (pos.entry - closePrice) * multiplier * pos.leverage;
+    setBalance(balance + pnl);
+    setHistory([{ pair, type: pos.type, entry: pos.entry, exit: closePrice, pnl, reason, time: new Date().toLocaleTimeString() }, ...history].slice(0, 10));
+    setPos(null);
+    setStopLoss("");
+    setTakeProfit("");
+  };
+
+  const currentPnL = pos ? (pos.type === "BUY" ? (price - pos.entry) * (pair === "BTCUSD" ? 1 : 1000) * pos.leverage : (pos.entry - price) * (pair === "BTCUSD" ? 1 : 1000) * pos.leverage) : 0;
+  const totalTrades = history.length;
+  const winningTrades = history.filter(t => t.pnl > 0).length;
+  const winRate = totalTrades > 0 ? ((winningTrades / totalTrades) * 100).toFixed(1) : 0;
+
+  return (
+    <div className="content">
+      <div className="card">
+        <h3>Conta Demo</h3>
+        <div className="stats">
+          <div className="stat"><div className="stat-label">Saldo</div><div className="stat-value">${balance.toFixed(2)}</div></div>
+          <div className="stat"><div className="stat-label">P&L</div><div className={`stat-value ${currentPnL < 0 ? 'negative' : ''}`}>${currentPnL.toFixed(2)}</div></div>
+          <div className="stat"><div className="stat-label">Win Rate</div><div className="stat-value">{winRate}%</div></div>
+          <div className="stat"><div className="stat-label">Trades</div><div className="stat-value">{totalTrades}</div></div>
+        </div>
+
+        <hr className="divider" />
+
+        <div className="control-group"><label>Par de Moedas</label><select value={pair} onChange={(e) => setPair(e.target.value)} disabled={!!pos}><option value="EURUSD">EUR/USD</option><option value="GBPUSD">GBP/USD</option><option value="USDJPY">USD/JPY</option><option value="BTCUSD">BTC/USD</option></select></div>
+        <div className="control-group"><label>Preço: {pair === "BTCUSD" ? price.toFixed(2) : price.toFixed(5)}</label></div>
+        <div className="control-group"><label>Alavancagem</label><select value={leverage} onChange={(e) => setLeverage(Number(e.target.value))} disabled={!!pos}><option value="1">1:1</option><option value="5">1:5</option><option value="10">1:10</option><option value="20">1:20</option><option value="50">1:50</option></select></div>
+        <div className="control-group"><label>Stop Loss</label><input type="number" placeholder="Opcional" value={stopLoss} onChange={(e) => setStopLoss(e.target.value)} step={pair === "BTCUSD" ? "10" : "0.0001"} disabled={!!pos} /></div>
+        <div className="control-group"><label>Take Profit</label><input type="number" placeholder="Opcional" value={takeProfit} onChange={(e) => setTakeProfit(e.target.value)} step={pair === "BTCUSD" ? "10" : "0.0001"} disabled={!!pos} /></div>
+
+        <button className="btn buy" onClick={() => openPosition("BUY")} disabled={!!pos}>COMPRAR</button>
+        <button className="btn sell" onClick={() => openPosition("SELL")} disabled={!!pos}>VENDER</button>
+        {pos && <button className="btn close" onClick={() => closePosition(price)}>Fechar Posição</button>}
+
+        {pos && (
+          <div className={`position-card ${pos.type.toLowerCase()}`}>
+            <h4>Posição Aberta</h4>
+            <div><strong>Tipo:</strong> {pos.type}</div>
+            <div><strong>Par:</strong> {pair}</div>
+            <div><strong>Entrada:</strong> {pos.entry.toFixed(pair === "BTCUSD" ? 2 : 5)}</div>
+            <div><strong>Alavancagem:</strong> 1:{pos.leverage}</div>
+            {pos.stopLoss && <div><strong>Stop Loss:</strong> {pos.stopLoss.toFixed(pair === "BTCUSD" ? 2 : 5)}</div>}
+            {pos.takeProfit && <div><strong>Take Profit:</strong> {pos.takeProfit.toFixed(pair === "BTCUSD" ? 2 : 5)}</div>}
+            <div style={{ marginTop: "12px", fontSize: "1.1rem" }}>
+              <strong>P&L: </strong>
+              <span style={{ color: currentPnL >= 0 ? "#00ff88" : "#ff3366", fontWeight: 700 }}>${currentPnL.toFixed(2)}</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {history.length > 0 && (
+        <div className="card">
+          <h3>Histórico</h3>
+          {history.map((t, i) => (
+            <div key={i} className="trade-item">
+              <div><div style={{ fontWeight: 600, marginBottom: "4px" }}>{t.pair} {t.type}</div><div style={{ fontSize: "0.75rem", color: "#a0aec0" }}>{t.reason} • {t.time}</div></div>
+              <div className={t.pnl >= 0 ? "profit" : "loss"}>${t.pnl.toFixed(2)}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Education() {
+  const courses = [
+    { icon: "📊", title: "Introdução ao Trading", desc: "Conceitos básicos e primeiros passos", duration: "2h" },
+    { icon: "📈", title: "Análise Técnica", desc: "Gráficos, padrões e indicadores", duration: "4h" },
+    { icon: "💹", title: "Gestão de Risco", desc: "Como proteger seu capital", duration: "3h" },
+    { icon: "🧠", title: "Psicologia do Trader", desc: "Controle emocional", duration: "2.5h" }
+  ];
+
+  return (
+    <div className="content">
+      <div className="card">
+        <h3>Centro de Educação</h3>
+        <p style={{color: "#a0aec0", marginBottom: "16px"}}>Aprenda trading do zero ao avançado</p>
+        {courses.map((c, i) => (
+          <div key={i} style={{background: "#151b23", padding: "16px", borderRadius: "8px", marginBottom: "12px", borderLeft: "3px solid #00ff88"}}>
+            <div style={{fontSize: "2rem", marginBottom: "8px"}}>{c.icon}</div>
+            <h4 style={{margin: "0 0 6px 0"}}>{c.title}</h4>
+            <p style={{margin: "0 0 8px 0", color: "#a0aec0", fontSize: "0.9rem"}}>{c.desc}</p>
+            <div style={{fontSize: "0.8rem", color: "#00ff88"}}>⏱️ {c.duration}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function More({ setPage }) {
+  return (
+    <div className="content">
+      <div className="card">
+        <h3>Mais Recursos</h3>
+        <div style={{display: "grid", gap: "12px"}}>
+          <button onClick={() => alert("Em breve!")} style={{background: "#151b23", border: "1px solid #1f2937", padding: "16px", borderRadius: "8px", color: "#e6edf3", cursor: "pointer", textAlign: "left"}}>
+            <div style={{fontSize: "1.5rem", marginBottom: "6px"}}>💼</div>
+            <div style={{fontWeight: 600}}>Portfolio Tracker</div>
+            <div style={{fontSize: "0.85rem", color: "#a0aec0"}}>Acompanhe seus ativos</div>
+          </button>
+          <button onClick={() => alert("Em breve!")} style={{background: "#151b23", border: "1px solid #1f2937", padding: "16px", borderRadius: "8px", color: "#e6edf3", cursor: "pointer", textAlign: "left"}}>
+            <div style={{fontSize: "1.5rem", marginBottom: "6px"}}>📅</div>
+            <div style={{fontWeight: 600}}>Calendário Econômico</div>
+            <div style={{fontSize: "0.85rem", color: "#a0aec0"}}>Eventos importantes</div>
+          </button>
+          <button onClick={() => alert("Em breve!")} style={{background: "#151b23", border: "1px solid #1f2937", padding: "16px", borderRadius: "8px", color: "#e6edf3", cursor: "pointer", textAlign: "left"}}>
+            <div style={{fontSize: "1.5rem", marginBottom: "6px"}}>📰</div>
+            <div style={{fontWeight: 600}}>Notícias do Mercado</div>
+            <div style={{fontSize: "0.85rem", color: "#a0aec0"}}>Feed em tempo real</div>
+          </button>
+          <button onClick={() => alert("Em breve!")} style={{background: "#151b23", border: "1px solid #1f2937", padding: "16px", borderRadius: "8px", color: "#e6edf3", cursor: "pointer", textAlign: "left"}}>
+            <div style={{fontSize: "1.5rem", marginBottom: "6px"}}>🏆</div>
+            <div style={{fontWeight: 600}}>Ranking de Traders</div>
+            <div style={{fontSize: "0.85rem", color: "#a0aec0"}}>Top 10 da plataforma</div>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [page, setPage] = useState("home");
+
+  return (
+    <>
+      <Header />
+      {page === "home" && <Home setPage={setPage} />}
+      {page === "trade" && <TradingAdvanced />}
+      {page === "sim" && <SimulatorPro />}
+      {page === "edu" && <Education />}
+      {page === "more" && <More setPage={setPage} />}
+      <BottomNav page={page} setPage={setPage} />
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
